@@ -1,0 +1,4 @@
+(
+  title: "cg_rogue",
+  dimensions: Some((500, 500)),
+)
