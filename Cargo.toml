@@ -1,11 +1,13 @@
 [package]
 name = "cg_rogue"
 version = "0.1.0"
-authors = []
+authors = ["Tim Sims <thetimsims@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 amethyst = "0.15.0"
+log = { version = "0.4.8" }
+ron = "*"
 
 [features]
 default = ["vulkan"]
