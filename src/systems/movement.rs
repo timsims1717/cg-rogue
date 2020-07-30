@@ -1,0 +1,67 @@
+use amethyst::core::ecs::{Join, System, WriteStorage, Read};
+use amethyst::core::{Transform, Time};
+use crate::components::{Movement, Character};
+use amethyst::core::math::Vector3;
+use crate::util::map_to_world_hex;
+
+pub struct CharMovementSystem;
+
+impl<'s> System<'s> for CharMovementSystem {
+    type SystemData = (
+        WriteStorage<'s, Transform>,
+        WriteStorage<'s, Movement>,
+        WriteStorage<'s, Character>,
+        Read<'s, Time>,
+    );
+
+    fn run(&mut self, (
+        mut transforms,
+        mut movements,
+        mut characters,
+        time
+    ): Self::SystemData) {
+        // todo: add a fast mode?
+        let movement_speed = 0.5;
+        let delta_time = time.delta_real_seconds();
+        let move_factor = movement_speed * delta_time;
+        for (transform, movement, character) in (&mut transforms, &mut movements, &mut characters).join() {
+            if movement.path_i < movement.path.len() {
+                if movement.path_i == 0 {
+                    movement.path_i += 1;
+                }
+                let (a_x, a_y) = movement.path[movement.path_i-1];
+                let (b_x, b_y) = movement.path[movement.path_i];
+                let (start_x, start_y) = map_to_world_hex(a_x as f32, a_y as f32);
+                let (end_x, end_y) = map_to_world_hex(b_x as f32, b_y as f32);
+                let diff_x = end_x - start_x;
+                let diff_y = end_y - start_y;
+                let move_x = move_factor * diff_x;
+                let move_y = move_factor * diff_y;
+                let mut arrived = true;
+                let tx = transform.translation().x;
+                let ty = -transform.translation().y;
+
+                if (move_x < 0. && tx + move_x > end_x)
+                    || (move_x > 0. && tx + move_x < end_x) {
+                    arrived = false;
+                    transform.move_right(move_x);
+                } else {
+                    transform.set_translation_x(end_x);
+                }
+                if (move_y < 0. && ty + move_y > end_y)
+                    || (move_y > 0. && ty + move_y < end_y) {
+                    arrived = false;
+                    transform.move_down(move_y);
+                } else {
+                    transform.set_translation_y(-end_y);
+                }
+
+                if arrived {
+                    movement.path_i += 1;
+                    character.x = b_x;
+                    character.y = b_y;
+                }
+            }
+        }
+    }
+}
