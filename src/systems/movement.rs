@@ -21,16 +21,12 @@ impl<'s> System<'s> for CharMovementSystem {
         time
     ): Self::SystemData) {
         // todo: add a fast mode?
-        let movement_speed = 0.5;
+        let movement_speed = 2.0;
         let delta_time = time.delta_real_seconds();
         let move_factor = movement_speed * delta_time;
         for (transform, movement, character) in (&mut transforms, &mut movements, &mut characters).join() {
-            if movement.path_i < movement.path.len() {
-                if movement.path_i == 0 {
-                    movement.path_i += 1;
-                }
-                let (a_x, a_y) = movement.path[movement.path_i-1];
-                let (b_x, b_y) = movement.path[movement.path_i];
+            if !movement.path_complete() {
+                let (a_x, a_y, b_x, b_y) = movement.get_move();
                 let (start_x, start_y) = map_to_world_hex(a_x as f32, a_y as f32);
                 let (end_x, end_y) = map_to_world_hex(b_x as f32, b_y as f32);
                 let diff_x = end_x - start_x;
@@ -57,9 +53,11 @@ impl<'s> System<'s> for CharMovementSystem {
                 }
 
                 if arrived {
-                    movement.path_i += 1;
+                    movement.next_move();
                     character.x = b_x;
                     character.y = b_y;
+                    // todo: remove ui bits and do any other on move stuff
+                    // todo: if reached end, delete movement component
                 }
             }
         }

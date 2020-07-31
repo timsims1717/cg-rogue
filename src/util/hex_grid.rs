@@ -5,6 +5,12 @@ use amethyst::core::{
     Transform,
 };
 use amethyst::renderer::Camera;
+use pathfinding::prelude::astar;
+use amethyst::core::ecs::WriteStorage;
+use crate::components::FloorTile;
+use crate::resources::{Floor, Pos};
+
+/* Basic Grid Functions */
 
 pub fn map_to_world_hex(map_x: f32, map_y: f32) -> (f32, f32) {
     if map_x.floor() as usize % 2 != 0 {
@@ -36,4 +42,69 @@ pub fn mouse_to_world(mouse_x: f32, mouse_y: f32, screen_dim: &ScreenDimensions,
 pub fn mouse_to_map_hex(mouse_x: f32, mouse_y: f32, screen_dim: &ScreenDimensions, camera: &Camera, camera_transform: &Transform) -> (f32, f32) {
     let (world_x, world_y) = mouse_to_world(mouse_x, mouse_y, screen_dim, camera, camera_transform);
     world_to_map_hex(world_x, world_y)
+}
+
+pub fn closest_point_in_map(x: f32, y: f32, width: usize, height: usize) -> (f32, f32) {
+    let (w, h) = (width as f32 * SCALED_TILE_SIZE, height as f32 * SCALED_TILE_SIZE);
+    let new_x = if x < 0.0 {
+        0.0
+    } else if x > w {
+        w
+    } else {
+        x
+    };
+    let new_y = if y < 0.0 {
+        0.0
+    } else if y > h {
+        h
+    } else {
+        y
+    };
+    (new_x, new_y)
+}
+
+/* Path and Shape Functions */
+
+#[derive(Clone, Debug)]
+pub struct PathEnds {
+    pub a_x: usize,
+    pub a_y: usize,
+    pub b_x: usize,
+    pub b_y: usize,
+}
+
+pub fn distance(ends: PathEnds) -> u32 {
+    let mut dist: u32 = 0;
+    let (mut x, mut y) = (ends.a_x, ends.a_y);
+    while x != ends.b_x {
+        if x % 2 == 0 && y > ends.b_y {
+            y -= 1;
+        } else if x % 2 != 0 && y < ends.b_y {
+            y += 1;
+        }
+        if x > ends.b_x {
+            x -= 1;
+        } else {
+            x += 1;
+        }
+        dist += 1;
+    }
+    dist + (y as i32 - ends.b_y as i32).abs() as u32
+}
+
+// find the shortest path between two tiles
+pub fn shortest_path(ends: PathEnds, floor: &Floor, tiles: &WriteStorage<FloorTile>) -> Option<Vec<(usize, usize)>> {
+    let start = Pos::new(ends.a_x, ends.a_y);
+    let end = Pos::just_point(ends.b_x, ends.b_y);
+    let result = astar(
+        &start,
+       |p| p.successors(floor),
+       |p| p.distance(&end),
+        |p| *p == end
+    );
+    if let Some((v, _)) = result {
+        Some(v.into_iter().map(|p| (p.x, p.y)).collect())
+    } else {
+        None
+    }
 }

@@ -13,7 +13,7 @@ use crate::{
     resources::{Floor, FloorSize},
     util::{SCALAR, TILE_SIZE}
 };
-use crate::resources::{CameraHandle, UISprites, PreFloor};
+use crate::resources::{CameraHandle, UISprites, PreFloor, Player};
 use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex};
 use crate::components::Character;
 
@@ -43,7 +43,8 @@ impl SimpleState for GamePlayState {
 
         let floor = init_floor(world, &mut pre_floor, &tile_sprites);
         world.insert(floor);
-        init_player(world, &char_sprites);
+        let player = init_player(world, &char_sprites);
+        world.insert(player);
     }
 
     fn handle_event(
@@ -209,18 +210,20 @@ fn init_floor(world: &mut World, pre_floor: &mut PreFloor, tile_sprites: &[Sprit
     floor
 }
 
-fn init_player(world: &mut World, char_sprites: &[SpriteRender]) {
+fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Player {
     let (world_x, world_y) = map_to_world_hex(4 as f32, 7 as f32);
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.0));
     transform.set_translation_xyz(world_x, -world_y, CHAR_Z);
 
-    world.create_entity()
-        .with(char_sprites[0].clone())
-        .with(Character{
-            x: 4,
-            y: 7,
-        })
-        .with(transform)
-        .build();
+    Player {
+        character: world.create_entity()
+            .with(char_sprites[0].clone())
+            .with(Character {
+                x: 4,
+                y: 7,
+            })
+            .with(transform)
+            .build(),
+    }
 }

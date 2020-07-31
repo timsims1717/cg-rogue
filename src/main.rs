@@ -1,3 +1,5 @@
+extern crate pathfinding;
+
 use amethyst::{
     core::transform::TransformBundle,
     prelude::*,
@@ -8,7 +10,7 @@ use amethyst::{
     },
     utils::application_root_dir,
 };
-use crate::systems::{MouseInputSystem, CharMovementSystem};
+use crate::systems::{MouseInputSystem, CharMovementSystem, CameraMovementSystem, WindowResizeSystem};
 use amethyst::input::{InputBundle, StringBindings};
 
 mod components;
@@ -41,8 +43,10 @@ fn main() -> amethyst::Result<()> {
                 )
                 .with_plugin(RenderFlat2D::default()),
         )?
-        .with(MouseInputSystem, "mouse_hover", &[])
-        .with(CharMovementSystem, "char_move", &[]);
+        .with(MouseInputSystem::new(), "mouse_input", &[])
+        .with(CharMovementSystem, "char_move", &[])
+        .with(CameraMovementSystem, "camera_move", &[])
+        .with(WindowResizeSystem::new(), "window_resize", &[]);
 
     let mut game = Application::new(assets_dir, states::GamePlayState, game_data)?;
     game.run();
