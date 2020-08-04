@@ -6,7 +6,7 @@ use amethyst::core::{
 };
 use amethyst::renderer::Camera;
 use pathfinding::prelude::astar;
-use amethyst::core::ecs::WriteStorage;
+use amethyst::core::ecs::{WriteStorage, Entities};
 use crate::components::FloorTile;
 use crate::resources::{Floor, Pos};
 
@@ -93,7 +93,7 @@ pub fn distance(ends: PathEnds) -> u32 {
 }
 
 // find the shortest path between two tiles
-pub fn shortest_path(ends: PathEnds, floor: &Floor, tiles: &WriteStorage<FloorTile>) -> Option<Vec<(usize, usize)>> {
+pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> Option<Vec<(usize, usize)>> {
     let start = Pos::new(ends.a_x, ends.a_y);
     let end = Pos::just_point(ends.b_x, ends.b_y);
     let result = astar(

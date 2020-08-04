@@ -1,4 +1,5 @@
 use amethyst::core::ecs::{Component, DenseVecStorage};
+use crate::components::MovementOptions;
 
 #[derive(Debug, Clone)]
 pub struct Character {
@@ -11,39 +12,27 @@ impl Component for Character {
 }
 
 #[derive(Debug, Clone)]
-pub struct Movement {
-    path: Vec<(usize, usize)>,
-    path_i: usize,
-    smooth: bool,
+pub struct AI {
+    pub actions: Vec<Mode>,
 }
 
-impl Movement {
-    pub fn new(path: Vec<(usize, usize)>, smooth: bool) -> Movement {
-        Movement{
-            path,
-            path_i: 0,
-            smooth,
-        }
-    }
-
-    pub fn path_complete(&self) -> bool {
-        self.path_i >= self.path.len()
-    }
-
-    pub fn get_move(&mut self) -> (usize, usize, usize, usize) {
-        if self.path_i == 0 {
-            self.path_i += 1;
-        }
-        let (a_x, a_y) = self.path[self.path_i-1];
-        let (b_x, b_y) = self.path[self.path_i];
-        (a_x, a_y, b_x, b_y)
-    }
-
-    pub fn next_move(&mut self) {
-        self.path_i += 1;
-    }
+impl Component for AI {
+    type Storage = DenseVecStorage<Self>;
 }
 
-impl Component for Movement {
+#[derive(Debug, Clone)]
+pub struct PC {}
+
+impl Component for PC {
+    type Storage = DenseVecStorage<Self>;
+}
+
+#[derive(Debug, Clone)]
+pub enum Mode {
+    Interact,
+    Move(MovementOptions),
+}
+
+impl Component for Mode {
     type Storage = DenseVecStorage<Self>;
 }

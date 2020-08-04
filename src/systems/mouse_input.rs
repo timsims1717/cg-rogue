@@ -5,11 +5,13 @@ use amethyst::{
     renderer::camera::Camera,
     window::ScreenDimensions,
 };
-use crate::resources::{CameraHandle, Floor, UISprites, Player};
+use crate::resources::{CameraHandle, Floor, UISprites, Player, Game, Phase};
 use crate::util::{tile_exists, mouse_to_map_hex, shortest_path, PathEnds};
-use crate::components::{FloorTile, TileUIElement, Character, Movement};
+use crate::components::{FloorTile, TileUIElement, Character, Movement, MovementOptions, Mode};
 use crate::entities::{create_tile_ui, TileUI};
 use amethyst::renderer::rendy::wsi::winit::MouseButton::{Left, Right};
+use crate::components::Mode::{Move, Interact};
+use crate::resources::Phase::PlayerAction;
 
 pub struct MouseInputSystem {
     last_map: (usize, usize),
@@ -26,38 +28,38 @@ impl MouseInputSystem{
 impl<'s> System<'s> for MouseInputSystem {
     type SystemData = (
         Entities<'s>,
-        WriteStorage<'s, FloorTile>,
         WriteStorage<'s, TileUIElement>,
         ReadStorage<'s, Camera>,
         ReadStorage<'s, Transform>,
         Read<'s, InputHandler<StringBindings>>,
         ReadExpect<'s, Floor>,
         ReadExpect<'s, CameraHandle>,
-        ReadExpect<'s, LazyUpdate>,
         ReadExpect<'s, ScreenDimensions>,
-        ReadExpect<'s, UISprites>,
-        ReadStorage<'s, Character>,
-        ReadExpect<'s, Player>
+        WriteExpect<'s, Player>,
     );
 
     fn run(&mut self, (
         entities,
-        mut tiles,
         mut tiles_ui,
         cameras,
         transforms,
         input_handler,
         floor,
         camera_handle,
-        lazy_update,
         screen_dimensions,
-        ui_sprites,
-        characters,
-        player
+        mut player,
     ): Self::SystemData) {
+
+        if input_handler.action_is_down("MoveButton").unwrap() {
+            player.mode = Move(MovementOptions{
+                range: 2,
+                line: false,
+            });
+        }
+
         if let Some((xf, yf)) = input_handler.mouse_position() {
-            let left_click = input_handler.mouse_button_is_down(Left);
-            let right_click = input_handler.mouse_button_is_down(Right); // todo: right click cancels current card
+            player.input.l_click = input_handler.mouse_button_is_down(Left);
+            player.input.r_click = input_handler.mouse_button_is_down(Right); // todo: right click cancels current card
             let camera_transform = transforms.get(camera_handle.camera).unwrap();
             let camera = cameras.get(camera_handle.camera).unwrap();
 
@@ -71,6 +73,7 @@ impl<'s> System<'s> for MouseInputSystem {
             let (map_x, map_y) = mouse_to_map_hex(xf, yf, &screen_dimensions, camera, camera_transform);
             if tile_exists(map_x as isize, map_y as isize, floor.dimensions.width as isize, floor.dimensions.height as isize) {
                 let (tile_x, tile_y) =  (map_x as usize, map_y as usize);
+                player.input.tile = Some((tile_x, tile_y));
                 // if (tile_x, tile_y) == self.last_map {
                 //     todo: this is how to check if anything has changed
                 // }
@@ -109,23 +112,6 @@ impl<'s> System<'s> for MouseInputSystem {
                 //         }
                 //     }
                 // }
-                if let Some(character) = characters.get(player.character) {
-                    if let Some(tile_group) = shortest_path(
-                        PathEnds{
-                            a_x: character.x,
-                            a_y: character.y,
-                            b_x: tile_x,
-                            b_y: tile_y
-                        }, &floor, &tiles,
-                    ) {
-                        for (x, y) in tile_group.iter() {
-                            create_tile_ui(&entities, ui_sprites.set.clone(), *x, *y, true, TileUI::Move, &lazy_update);
-                        }
-                        if left_click {
-                            lazy_update.insert(player.character, Movement::new(tile_group, true));
-                        }
-                    }
-                }
             } else {
                 // if mouse is outside the map
                 // for (entity, tile) in (&*entities, &mut tiles_ui).join() {

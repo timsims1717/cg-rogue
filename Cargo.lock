@@ -603,6 +603,7 @@ dependencies = [
  "amethyst",
  "log",
  "pathfinding",
+ "rand 0.4.6",
  "ron",
 ]
 

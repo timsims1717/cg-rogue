@@ -13,9 +13,11 @@ use crate::{
     resources::{Floor, FloorSize},
     util::{SCALAR, TILE_SIZE}
 };
-use crate::resources::{CameraHandle, UISprites, PreFloor, Player};
+use crate::resources::{CameraHandle, UISprites, PreFloor, Player, Game, DebugText};
 use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex};
-use crate::components::Character;
+use crate::components::{Character, AI, MovementOptions, Mode, PC};
+use crate::components::Mode::Interact;
+use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText};
 
 pub struct GamePlayState;
 
@@ -45,11 +47,14 @@ impl SimpleState for GamePlayState {
         world.insert(floor);
         let player = init_player(world, &char_sprites);
         world.insert(player);
+        world.insert(Game::new());
+        // init_enemies(world, &char_sprites);
+        init_debug(world);
     }
 
     fn handle_event(
         &mut self,
-        mut _data: StateData<'_, GameData<'_, '_>>,
+        mut data: StateData<'_, GameData<'_, '_>>,
         event: StateEvent,
     ) -> SimpleTrans {
         if let StateEvent::Window(event) = &event {
@@ -57,7 +62,6 @@ impl SimpleState for GamePlayState {
             if is_close_requested(&event) || is_key_down(&event, VirtualKeyCode::Escape) {
                 return Trans::Quit;
             }
-
 
             // Listen to any key events
             if let Some(event) = get_key(&event) {
@@ -178,7 +182,7 @@ pub fn load_ui_textures(world: &mut World) -> Vec<SpriteRender> {
         )
     };
 
-    (0..1)
+    (0..3)
         .map(|i| SpriteRender {
             sprite_sheet: sheet_handle.clone(),
             sprite_number: i,
@@ -216,14 +220,65 @@ fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Player {
     transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.0));
     transform.set_translation_xyz(world_x, -world_y, CHAR_Z);
 
-    Player {
-        character: world.create_entity()
+    Player::new(
+        world.create_entity()
             .with(char_sprites[0].clone())
             .with(Character {
                 x: 4,
                 y: 7,
             })
             .with(transform)
+            .with(PC{})
             .build(),
-    }
+    )
+}
+
+fn init_enemies(world: &mut World, char_sprites: &[SpriteRender]) {
+    let (world_x, world_y) = map_to_world_hex(9 as f32, 6 as f32);
+    let mut transform = Transform::default();
+    transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.0));
+    transform.set_translation_xyz(world_x, -world_y, CHAR_Z);
+
+    world.create_entity()
+        .with(char_sprites[0].clone())
+        .with(Character {
+            x: 9,
+            y: 6,
+        })
+        .with(AI{
+            actions: vec![Mode::Move(MovementOptions{
+                range: 3,
+                line: false,
+            })]
+        })
+        .with(transform)
+        .build();
+}
+
+fn init_debug(world: &mut World) {
+    let font = world.read_resource::<Loader>().load(
+        "font/square.ttf",
+        TtfFormat,
+        (),
+        &world.read_resource(),
+    );
+    let phase_transform = UiTransform::new(
+        "DEBUG_phase".to_string(),
+        Anchor::TopLeft,
+        Anchor::TopLeft,
+        20.0, -20.0, 1.0, 200.0, 20.0,
+    );
+
+    let phase = world
+        .create_entity()
+        .with(phase_transform)
+        .with(UiText::new(
+            font.clone(),
+            "init".to_string(),
+            [1., 1., 1., 1.],
+            20.,
+        ))
+        .build();
+
+    world.insert(DebugText{phase});
 }

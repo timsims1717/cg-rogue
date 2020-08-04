@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 amethyst = "0.15.0"
 log = { version = "0.4.8" }
-ron = "*"
 pathfinding = "2.0.4"
+rand = "*"
+ron = "*"
 
 [features]
 default = ["vulkan"]

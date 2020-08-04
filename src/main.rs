@@ -1,4 +1,5 @@
 extern crate pathfinding;
+extern crate rand;
 
 use amethyst::{
     core::transform::TransformBundle,
@@ -8,9 +9,10 @@ use amethyst::{
         types::DefaultBackend,
         RenderingBundle,
     },
+    ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-use crate::systems::{MouseInputSystem, CharMovementSystem, CameraMovementSystem, WindowResizeSystem};
+use crate::systems::{MouseInputSystem, CharMovementSystem, CameraMovementSystem, WindowResizeSystem, AITurnSystem, PlayerTurnSystem, CharacterActionSystem, DebugSystem};
 use amethyst::input::{InputBundle, StringBindings};
 
 mod components;
@@ -41,12 +43,18 @@ fn main() -> amethyst::Result<()> {
                     RenderToWindow::from_config_path(display_config_path)?
                         .with_clear([0., 0., 0., 1.0]),
                 )
-                .with_plugin(RenderFlat2D::default()),
+                .with_plugin(RenderFlat2D::default())
+                .with_plugin(RenderUi::default()),
         )?
+        .with_bundle(UiBundle::<StringBindings>::new())?
         .with(MouseInputSystem::new(), "mouse_input", &[])
         .with(CharMovementSystem, "char_move", &[])
         .with(CameraMovementSystem, "camera_move", &[])
-        .with(WindowResizeSystem::new(), "window_resize", &[]);
+        .with(WindowResizeSystem::new(), "window_resize", &[])
+        .with(PlayerTurnSystem, "player_turn_system", &[])
+        .with(CharacterActionSystem, "character_action_system", &[])
+        .with(AITurnSystem, "ai_turn_system", &[])
+        .with(DebugSystem, "debug_system", &[]);
 
     let mut game = Application::new(assets_dir, states::GamePlayState, game_data)?;
     game.run();

@@ -1,0 +1,53 @@
+======================================
+Story
+======================================
+
+Each playable character is the same person from different alternate realities. One of their versions is the bad guy.
+
+
+======================================
+Possible Playable Characters
+======================================
+
+The Runner (Jake or Jane Peril):
+	No Defense, but nearly all cards have Movement
+	No Damage, except for Bombs
+	Lots of Traps
+	Good at collecting Gold
+	Bonuses for collecting Gold
+
+The Hoplite:
+	Strong Defense and Attack
+	Really good at boosting Allies at close range
+
+The Surge:
+	Wild Magic Surge
+
+The Wrestler:
+	Grappling
+
+Muscular Puncher:
+	High Damage
+
+Door Wizard
+
+
+======================================
+Progression System
+======================================
+Each character levels up by gaining experience. Experience is gained by:
+	Killing Enemies
+	Fulfilling Maneuvers (card specific objectives)
+	Fulfilling Character Objectives
+	Exploring the Map
+	Gaining Gold
+	Etc
+
+Each playable character also has a bonus way to gain experience:
+	Example: Runner: Gaining Gold is doubled/tripled
+	Example: Wrestler: Comboing enemies (deal damage/grapple on each turn while not taking damage)
+	Example: Hoplite: Defending self and allies
+
+The power level of each card you earn/buy is partially determined by your current level (kinda like Minecraft Dungeons)
+
+You can also maybe spend experience to level up your allies?

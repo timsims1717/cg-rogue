@@ -14,7 +14,7 @@ pub fn create_tile_ui(
     tile_x: usize,
     tile_y: usize,
     hover: bool,
-    _ui_type: TileUI,
+    ui_type: TileUI,
     lazy_update: &ReadExpect<LazyUpdate>,
 ) {
     let ui_entity = entities.create();
@@ -29,9 +29,15 @@ pub fn create_tile_ui(
         hover,
     };
 
+    let i = match ui_type {
+        TileUI::Normal => 0,
+        TileUI::Move => 1,
+        _ => 2,
+    };
+
     lazy_update.insert(ui_entity, ui_element);
     lazy_update.insert(ui_entity, transform);
-    lazy_update.insert(ui_entity, sprites[0].clone());
+    lazy_update.insert(ui_entity, sprites[i].clone());
 }
 
 // todo: how to stack UI? ie, move + attack
