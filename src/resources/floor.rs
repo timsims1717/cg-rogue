@@ -1,6 +1,6 @@
 use amethyst::core::ecs::{Entity, WriteStorage};
 use crate::components::FloorTile;
-use crate::util::{distance, PathEnds};
+use crate::util::{distance, PathEnds, distance_world};
 use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
 
@@ -94,8 +94,8 @@ impl Pos {
         }
     }
 
-    pub fn distance(&self, other: &Pos) -> u32 {
-        distance(PathEnds{
+    pub fn distance_world(&self, other: &Pos) -> u32 {
+        distance_world(&PathEnds{
             a_x: self.x,
             a_y: self.y,
             b_x: other.x,
@@ -123,7 +123,10 @@ impl PreFloor {
                 height: 20,
             },
             tiles: vec![vec![FloorTile {
-                tile_index: 0,
+                sprite_index: 0,
+                occupied: false,
+                solid: false,
+                walkable: true,
             }; 20]; 20],
         }
     }

@@ -10,7 +10,7 @@ use crate::util::{TILE_UI_Z, SCALAR, map_to_world_hex};
 // creates a ui element for a tile
 pub fn create_tile_ui(
     entities: &Entities,
-    sprites: Vec<SpriteRender>,
+    sprites: &Vec<SpriteRender>,
     tile_x: usize,
     tile_y: usize,
     hover: bool,
@@ -32,7 +32,9 @@ pub fn create_tile_ui(
     let i = match ui_type {
         TileUI::Normal => 0,
         TileUI::Move => 1,
-        _ => 2,
+        TileUI::Attack => 2,
+        TileUI::Nope => 3,
+        _ => 4,
     };
 
     lazy_update.insert(ui_entity, ui_element);
@@ -47,8 +49,8 @@ pub enum TileUI{
     Normal,  // gray
     Move,    // blue
     Move2,   // lighter blue
-    Damage,  // red
-    Damage2, // orange-red
+    Attack,  // red
+    Attack2, // orange-red
     Debuff,  // yellow
     Debuff2, // lighter yellow
     Buff,    // green

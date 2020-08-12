@@ -7,11 +7,11 @@ use amethyst::{
 };
 use crate::resources::{CameraHandle, Floor, UISprites, Player, Game, Phase};
 use crate::util::{tile_exists, mouse_to_map_hex, shortest_path, PathEnds};
-use crate::components::{FloorTile, TileUIElement, Character, Movement, MovementOptions, Mode};
+use crate::components::{FloorTile, TileUIElement, Character, MovementAction, MovementOptions, ActionOption, AttackOptions};
 use crate::entities::{create_tile_ui, TileUI};
 use amethyst::renderer::rendy::wsi::winit::MouseButton::{Left, Right};
-use crate::components::Mode::{Move, Interact};
-use crate::resources::Phase::PlayerAction;
+use crate::components::ActionOption::{Move, Interact, Attack};
+use crate::resources::Phase::PlayerActionPhase;
 
 pub struct MouseInputSystem {
     last_map: (usize, usize),
@@ -55,6 +55,10 @@ impl<'s> System<'s> for MouseInputSystem {
                 range: 2,
                 line: false,
             });
+        }
+
+        if input_handler.action_is_down("AttackButton").unwrap() {
+            player.mode = Attack(AttackOptions::basic(1, 1));
         }
 
         if let Some((xf, yf)) = input_handler.mouse_position() {

@@ -12,7 +12,7 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-use crate::systems::{MouseInputSystem, CharMovementSystem, CameraMovementSystem, WindowResizeSystem, AITurnSystem, PlayerTurnSystem, CharacterActionSystem, DebugSystem};
+use crate::systems::{MouseInputSystem, MovementActionSystem, CameraMovementSystem, WindowResizeSystem, AIDecideSystem, TileSelectSystem, PhaseSystem, DebugSystem, AttackActionSystem};
 use amethyst::input::{InputBundle, StringBindings};
 
 mod components;
@@ -48,13 +48,14 @@ fn main() -> amethyst::Result<()> {
         )?
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with(MouseInputSystem::new(), "mouse_input", &[])
-        .with(CharMovementSystem, "char_move", &[])
+        .with(MovementActionSystem, "movement_action", &[])
         .with(CameraMovementSystem, "camera_move", &[])
         .with(WindowResizeSystem::new(), "window_resize", &[])
-        .with(PlayerTurnSystem, "player_turn_system", &[])
-        .with(CharacterActionSystem, "character_action_system", &[])
-        .with(AITurnSystem, "ai_turn_system", &[])
-        .with(DebugSystem, "debug_system", &[]);
+        .with(TileSelectSystem, "tile_select", &[])
+        .with(PhaseSystem, "phase", &[])
+        .with(AIDecideSystem, "ai_decide", &[])
+        .with(DebugSystem, "debug", &[])
+        .with(AttackActionSystem, "attack_action", &[]);
 
     let mut game = Application::new(assets_dir, states::GamePlayState, game_data)?;
     game.run();

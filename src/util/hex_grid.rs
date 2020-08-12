@@ -9,6 +9,7 @@ use pathfinding::prelude::astar;
 use amethyst::core::ecs::{WriteStorage, Entities};
 use crate::components::FloorTile;
 use crate::resources::{Floor, Pos};
+use pathfinding::directed::astar::astar_bag_collect;
 
 /* Basic Grid Functions */
 
@@ -73,7 +74,7 @@ pub struct PathEnds {
     pub b_y: usize,
 }
 
-pub fn distance(ends: PathEnds) -> u32 {
+pub fn distance(ends: &PathEnds) -> u32 {
     let mut dist: u32 = 0;
     let (mut x, mut y) = (ends.a_x, ends.a_y);
     while x != ends.b_x {
@@ -92,19 +93,50 @@ pub fn distance(ends: PathEnds) -> u32 {
     dist + (y as i32 - ends.b_y as i32).abs() as u32
 }
 
+pub fn distance_world(ends: &PathEnds) -> u32 {
+    let (a_x, a_y) = map_to_world_hex(ends.a_x as f32, ends.a_y as f32);
+    let (b_x, b_y) = map_to_world_hex(ends.b_x as f32, ends.b_y as f32);
+    let x = (a_x - b_x);
+    let y = (a_y - b_y);
+    distance(ends) + ((x*x + y*y).sqrt() * 100.0) as u32
+}
+
 // find the shortest path between two tiles
 pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> Option<Vec<(usize, usize)>> {
+    // let start = Pos::new(ends.a_x, ends.a_y);
+    // let end = Pos::just_point(ends.b_x, ends.b_y);
+    // let results = astar_bag_collect(
+    //     &start,
+    //     |p| p.successors(floor),
+    //     |p| p.distance(&end),
+    //     |p| *p == end
+    // );
+    // if let Some((mut v, _)) = results {
+    //     return Some(v[v.len() / 2].clone().into_iter().map(|p| (p.x, p.y)).collect());
+    // }
+    // None
+
     let start = Pos::new(ends.a_x, ends.a_y);
     let end = Pos::just_point(ends.b_x, ends.b_y);
     let result = astar(
         &start,
-       |p| p.successors(floor),
-       |p| p.distance(&end),
+        |p| p.successors(floor),
+        |p| p.distance_world(&end),
         |p| *p == end
     );
     if let Some((v, _)) = result {
         Some(v.into_iter().map(|p| (p.x, p.y)).collect())
     } else {
         None
+    }
+}
+
+// returns true if the two tiles are within range
+pub fn in_range(ends: &PathEnds, range: usize, floor: &Floor/*, entities: &Entities*/) -> bool {
+    if range >= distance(ends) as usize {
+        // todo: calculate floor, los, etc.
+        true
+    } else {
+        false
     }
 }

@@ -19,12 +19,14 @@ The Runner (Jake or Jane Peril):
 The Hoplite:
 	Strong Defense and Attack
 	Really good at boosting Allies at close range
+	Desert Magic
 
 The Surge:
 	Wild Magic Surge
 
 The Wrestler:
 	Grappling
+	Psychic Magic
 
 Muscular Puncher:
 	High Damage

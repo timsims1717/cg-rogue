@@ -15,8 +15,8 @@ use crate::{
 };
 use crate::resources::{CameraHandle, UISprites, PreFloor, Player, Game, DebugText};
 use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex};
-use crate::components::{Character, AI, MovementOptions, Mode, PC};
-use crate::components::Mode::Interact;
+use crate::components::{Character, AI, MovementOptions, ActionOption, PC, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy};
+use crate::components::ActionOption::Interact;
 use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText};
 
 pub struct GamePlayState;
@@ -48,7 +48,7 @@ impl SimpleState for GamePlayState {
         let player = init_player(world, &char_sprites);
         world.insert(player);
         world.insert(Game::new());
-        // init_enemies(world, &char_sprites);
+        init_enemies(world, &char_sprites);
         init_debug(world);
     }
 
@@ -182,7 +182,7 @@ pub fn load_ui_textures(world: &mut World) -> Vec<SpriteRender> {
         )
     };
 
-    (0..3)
+    (0..5)
         .map(|i| SpriteRender {
             sprite_sheet: sheet_handle.clone(),
             sprite_number: i,
@@ -194,17 +194,21 @@ pub fn load_ui_textures(world: &mut World) -> Vec<SpriteRender> {
 
 fn init_floor(world: &mut World, pre_floor: &mut PreFloor, tile_sprites: &[SpriteRender]) -> Floor {
     let mut floor = Floor::new(pre_floor.dimensions.clone());
-    for (x, row) in pre_floor.tiles.iter().enumerate() {
-        for (y, t) in row.iter().enumerate() {
+    for (x, row) in pre_floor.tiles.iter_mut().enumerate() {
+        for (y, t) in row.iter_mut().enumerate() {
             let (world_x, world_y) = map_to_world_hex(x as f32, y as f32);
 
             let mut transform = Transform::default();
             transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.));
             transform.set_translation_xyz(world_x, -world_y, TILE_Z);
 
+            if (x == 4 && y == 7) || (x == 9 && y == 6) {
+                t.occupied = true;
+            }
+
             floor.append(
                 world.create_entity()
-                    .with(tile_sprites[t.tile_index].clone())
+                    .with(tile_sprites[t.sprite_index].clone())
                     .with(t.clone())
                     .with(transform)
                     .build()
@@ -226,6 +230,9 @@ fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Player {
             .with(Character {
                 x: 4,
                 y: 7,
+                d: Diplomacy::Player,
+                actions: vec![],
+                acting: false,
             })
             .with(transform)
             .with(PC{})
@@ -244,12 +251,42 @@ fn init_enemies(world: &mut World, char_sprites: &[SpriteRender]) {
         .with(Character {
             x: 9,
             y: 6,
+            d: Diplomacy::Enemy,
+            actions: vec![],
+            acting: false,
         })
         .with(AI{
-            actions: vec![Mode::Move(MovementOptions{
-                range: 3,
-                line: false,
-            })]
+            action_choices: vec![
+                AIActionOptionSeq {
+                    sequence: vec![
+                        AIActionOption {
+                            option: ActionOption::Move(MovementOptions::basic(2)),
+                            target: AITargetChoice::ClosestAlly(3, 30),
+                        },
+                    ]
+                },
+                AIActionOptionSeq {
+                    sequence: vec![
+                        AIActionOption {
+                            option: ActionOption::Move(MovementOptions::basic(1)),
+                            target: AITargetChoice::ClosestAlly(0, 3),
+                        },
+                        AIActionOption {
+                            option: ActionOption::Attack(AttackOptions::basic(1, 6)),
+                            target: AITargetChoice::ClosestAlly(0, 0),
+                        }
+                    ]
+                }
+            ],
+            tree: Some(vec![AITree{
+                require: AIRequire::Target(AITargetDecision::AnyAlly(3, 30)),
+                decision: Some(0),
+                tree: None,
+            }, AITree {
+                require: AIRequire::Target(AITargetDecision::AnyAlly(0, 3)),
+                decision: Some(1),
+                tree: None,
+            }])
         })
         .with(transform)
         .build();

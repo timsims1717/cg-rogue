@@ -2,7 +2,10 @@ use amethyst::core::ecs::{Component, DenseVecStorage};
 
 #[derive(Debug, Clone)]
 pub struct FloorTile {
-    pub tile_index: usize,
+    pub sprite_index: usize,
+    pub occupied: bool,
+    pub solid: bool,
+    pub walkable: bool,
 }
 
 impl Component for FloorTile {

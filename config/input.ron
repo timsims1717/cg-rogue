@@ -17,5 +17,8 @@
         "MoveButton": [
             [Key(M)]
         ],
+        "AttackButton": [
+            [Key(A)]
+        ],
     },
 )

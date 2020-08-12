@@ -8,7 +8,7 @@ pub struct Game {
 impl Game {
     pub fn new() -> Game {
         Game{
-            phase: Phase::AITurn,
+            phase: Phase::AIDecisionPhase,
         }
     }
 }
@@ -21,10 +21,10 @@ impl Default for Game {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Phase {
-    AITurn,
-    PlayerTurn,
-    PlayerAction,
-    AIAction,
+    AIDecisionPhase,
+    PlayerDecisionPhase,
+    PlayerActionPhase,
+    AIActionPhase,
 }
 
 impl fmt::Display for Phase {

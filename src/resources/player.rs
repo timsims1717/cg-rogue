@@ -1,10 +1,10 @@
 use amethyst::core::ecs::Entity;
-use crate::components::{MovementOptions, Mode};
-use crate::components::Mode::Interact;
+use crate::components::{MovementOptions, ActionOption};
+use crate::components::ActionOption::Interact;
 
 pub struct Player {
     pub character: Entity,
-    pub mode: Mode,
+    pub mode: ActionOption,
     pub input: PlayerInput,
 }
 
