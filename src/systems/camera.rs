@@ -3,7 +3,7 @@ use amethyst::core::{Transform, Time};
 use amethyst::renderer::Camera;
 use amethyst::window::ScreenDimensions;
 use amethyst::input::{StringBindings, InputHandler};
-use crate::resources::{Floor, Player};
+use crate::resources::{Floor};
 use crate::components::Character;
 use crate::util::{world_to_map_hex, map_to_world_hex, closest_point_in_map};
 
@@ -17,7 +17,6 @@ impl<'s> System<'s> for CameraMovementSystem {
         WriteStorage<'s, Transform>,
         Read<'s, InputHandler<StringBindings>>,
         ReadExpect<'s, Floor>,
-        ReadExpect<'s, Player>,
         Read<'s, Time>,
     );
 
@@ -28,7 +27,6 @@ impl<'s> System<'s> for CameraMovementSystem {
         mut transforms,
         input_handler,
         floor,
-        player,
         time,
     ): Self::SystemData) {
         // todo: scroll_sensitivity will be an option

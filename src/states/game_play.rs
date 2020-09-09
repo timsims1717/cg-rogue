@@ -13,9 +13,9 @@ use crate::{
     resources::{Floor, FloorSize},
     util::{SCALAR, TILE_SIZE}
 };
-use crate::resources::{CameraHandle, UISprites, PreFloor, Player, Game, DebugText};
+use crate::resources::{CameraHandle, UISprites, PreFloor, Game, DebugText};
 use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex};
-use crate::components::{Character, AI, MovementOptions, ActionOption, PC, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy};
+use crate::components::{Character, AI, MovementOptions, ActionOption, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy, HexCoords, Player};
 use crate::components::ActionOption::Interact;
 use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText};
 
@@ -43,12 +43,9 @@ impl SimpleState for GamePlayState {
         let ui_sprites = load_ui_textures(world);
         world.insert(UISprites { set: ui_sprites });
 
-        let floor = init_floor(world, &mut pre_floor, &tile_sprites);
+        let floor = init_floor(world, &mut pre_floor, &tile_sprites, &char_sprites);
         world.insert(floor);
-        let player = init_player(world, &char_sprites);
-        world.insert(player);
         world.insert(Game::new());
-        init_enemies(world, &char_sprites);
         init_debug(world);
     }
 
@@ -192,18 +189,20 @@ pub fn load_ui_textures(world: &mut World) -> Vec<SpriteRender> {
 
 /* loading floor */
 
-fn init_floor(world: &mut World, pre_floor: &mut PreFloor, tile_sprites: &[SpriteRender]) -> Floor {
+fn init_floor(world: &mut World, pre_floor: &mut PreFloor, tile_sprites: &[SpriteRender], char_sprites: &[SpriteRender]) -> Floor {
     let mut floor = Floor::new(pre_floor.dimensions.clone());
-    for (x, row) in pre_floor.tiles.iter_mut().enumerate() {
-        for (y, t) in row.iter_mut().enumerate() {
+    for (y, row) in pre_floor.tiles.iter_mut().enumerate() {
+        for (x, t) in row.iter_mut().enumerate() {
             let (world_x, world_y) = map_to_world_hex(x as f32, y as f32);
 
             let mut transform = Transform::default();
             transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.));
             transform.set_translation_xyz(world_x, -world_y, TILE_Z);
 
-            if (x == 4 && y == 7) || (x == 9 && y == 6) {
-                t.occupied = true;
+            if x == 4 && y == 7 {
+                t.character = Some(init_player(world, char_sprites))
+            } else if x == 9 && y == 6 {
+                t.character = Some(init_enemy(world, char_sprites))
             }
 
             floor.append(
@@ -218,29 +217,23 @@ fn init_floor(world: &mut World, pre_floor: &mut PreFloor, tile_sprites: &[Sprit
     floor
 }
 
-fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Player {
+fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
     let (world_x, world_y) = map_to_world_hex(4 as f32, 7 as f32);
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.0));
     transform.set_translation_xyz(world_x, -world_y, CHAR_Z);
 
-    Player::new(
-        world.create_entity()
-            .with(char_sprites[0].clone())
-            .with(Character {
-                x: 4,
-                y: 7,
-                d: Diplomacy::Player,
-                actions: vec![],
-                acting: false,
-            })
-            .with(transform)
-            .with(PC{})
-            .build(),
-    )
+    world.create_entity()
+        .with(char_sprites[0].clone())
+        .with(Character::new())
+        .with(HexCoords{ x: 4, y: 7 })
+        .with(transform)
+        .with(Diplomacy::Player)
+        .with(Player::new())
+        .build()
 }
 
-fn init_enemies(world: &mut World, char_sprites: &[SpriteRender]) {
+fn init_enemy(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
     let (world_x, world_y) = map_to_world_hex(9 as f32, 6 as f32);
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(SCALAR, SCALAR, 0.0));
@@ -248,13 +241,9 @@ fn init_enemies(world: &mut World, char_sprites: &[SpriteRender]) {
 
     world.create_entity()
         .with(char_sprites[0].clone())
-        .with(Character {
-            x: 9,
-            y: 6,
-            d: Diplomacy::Enemy,
-            actions: vec![],
-            acting: false,
-        })
+        .with(Character::new())
+        .with(HexCoords{ x: 9, y: 6 })
+        .with(Diplomacy::Enemy)
         .with(AI{
             action_choices: vec![
                 AIActionOptionSeq {
@@ -289,7 +278,7 @@ fn init_enemies(world: &mut World, char_sprites: &[SpriteRender]) {
             }])
         })
         .with(transform)
-        .build();
+        .build()
 }
 
 fn init_debug(world: &mut World) {
@@ -317,5 +306,23 @@ fn init_debug(world: &mut World) {
         ))
         .build();
 
-    world.insert(DebugText{phase});
+    let hover_transform = UiTransform::new(
+        "DEBUG_hover".to_string(),
+        Anchor::TopLeft,
+        Anchor::TopLeft,
+        20.0, -40.0, 1.0, 200.0, 20.0,
+    );
+
+    let hover = world
+        .create_entity()
+        .with(hover_transform)
+        .with(UiText::new(
+            font.clone(),
+            "init".to_string(),
+            [1., 1., 1., 1.],
+            20.,
+        ))
+        .build();
+
+    world.insert(DebugText{phase, hover });
 }

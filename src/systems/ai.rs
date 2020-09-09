@@ -1,6 +1,6 @@
 use amethyst::core::ecs::{Join, System, ReadStorage, Entities, ReadExpect, LazyUpdate, WriteStorage};
-use crate::components::{AI, Character, MovementAction, FloorTile, ai_decide, AITargetChoice, Action, AttackAction};
-use crate::resources::{Player, Game, Floor};
+use crate::components::{AI, Character, MovementAction, FloorTile, ai_decide, AITargetChoice, Action, AttackAction, HexCoords};
+use crate::resources::{Game, Floor};
 use amethyst::core::shred::WriteExpect;
 use crate::resources::Phase::{AIDecisionPhase, PlayerDecisionPhase, AIActionPhase};
 use rand::{thread_rng, Rng};
@@ -14,7 +14,8 @@ impl<'s> System<'s> for AIDecideSystem {
         Entities<'s>,
         ReadStorage<'s, AI>,
         WriteStorage<'s, Character>,
-        ReadExpect<'s, Player>,
+        ReadStorage<'s, HexCoords>,
+        ReadStorage<'s, Diplomacy>,
         WriteExpect<'s, Game>,
         ReadExpect<'s, Floor>,
         ReadStorage<'s, FloorTile>,
@@ -25,38 +26,36 @@ impl<'s> System<'s> for AIDecideSystem {
         entities,
         all_ai,
         mut characters,
-        player,
+        hexes,
+        diplomacies,
         mut game,
         floor,
         tiles,
         mut movements,
     ): Self::SystemData) {
         if game.phase == AIDecisionPhase {
-            let mut all_characters: Vec<(usize, usize, Diplomacy)> = Vec::new();
-            for (ch) in (&characters).join() {
-                all_characters.push((ch.x, ch.y, ch.d.clone()));
+            let mut all_characters: Vec<(HexCoords, Diplomacy)> = Vec::new();
+            for (_, d, hex) in (&characters, &diplomacies, &hexes).join() {
+                all_characters.push((hex.clone(), d.clone()));
             }
-            let pc = characters.get(player.character).unwrap();
-            for (ai, character) in (&all_ai, &mut characters).join() {
+            for (ai, character, hex) in (&all_ai, &mut characters, &hexes).join() {
                 if !ai.action_choices.is_empty() {
-                    if let(Some(decision), _) = ai_decide(&ai.tree, (character.x, character.y), &all_characters) {
+                    if let(Some(decision), _) = ai_decide(&ai.tree, &hex, &all_characters) {
                         let choice = &ai.action_choices[decision];
                         for ai_option in choice.sequence.iter() {
-                            if let Some((target_x, target_y)) = match ai_option.target {
+                            if let Some(target_hex) = match ai_option.target {
                                 AITargetChoice::ClosestAlly(min, max) => {
                                     let (mut best, mut t_x, mut t_y) = (0,0,0);
-                                    for (x, y, d) in all_characters.iter() {
+                                    for (h, d) in all_characters.iter() {
                                         if *d == Diplomacy::Ally || *d == Diplomacy::Player {
                                             let dist = distance(&PathEnds {
-                                                a_x: character.x,
-                                                a_y: character.y,
-                                                b_x: *x,
-                                                b_y: *y,
+                                                a: hex.clone(),
+                                                b: h.clone(),
                                             }) as usize;
                                             if dist >= min && dist < max && best == 0 || best > dist {
                                                 best = dist;
-                                                t_x = *x;
-                                                t_y = *y;
+                                                t_x = h.x;
+                                                t_y = h.y;
                                                 if dist == min {
                                                     break;
                                                 }
@@ -64,7 +63,7 @@ impl<'s> System<'s> for AIDecideSystem {
                                         }
                                     }
                                     if t_x != 0 || t_y != 0 {
-                                        Some((t_x, t_y))
+                                        Some(HexCoords{ x: t_x, y: t_y })
                                     } else {
                                         None
                                     }
@@ -74,7 +73,8 @@ impl<'s> System<'s> for AIDecideSystem {
                                 character.actions.push(match &ai_option.option {
                                     ActionOption::Move(m) => {
                                         if let Some(mut path) = shortest_path(PathEnds{
-                                                a_x: character.x, a_y: character.y, b_x: target_x, b_y: target_y
+                                                a: hex.clone(),
+                                                b: target_hex,
                                             }, &floor) {
                                             path.truncate(m.range + 1);
                                             Action::Move(MovementAction::new(path, m.clone()))
@@ -83,7 +83,7 @@ impl<'s> System<'s> for AIDecideSystem {
                                         }
                                     },
                                     ActionOption::Attack(a) => {
-                                        Action::Attack(AttackAction::new(vec![(target_x, target_y)], a.clone()))
+                                        Action::Attack(AttackAction::new(vec![target_hex], a.clone()))
                                     },
                                     _ => Action::NoAction,
                                 });

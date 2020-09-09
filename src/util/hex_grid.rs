@@ -7,8 +7,8 @@ use amethyst::core::{
 use amethyst::renderer::Camera;
 use pathfinding::prelude::astar;
 use amethyst::core::ecs::{WriteStorage, Entities};
-use crate::components::FloorTile;
-use crate::resources::{Floor, Pos};
+use crate::components::{FloorTile, HexCoords};
+use crate::resources::Floor;
 use pathfinding::directed::astar::astar_bag_collect;
 
 /* Basic Grid Functions */
@@ -66,43 +66,43 @@ pub fn closest_point_in_map(x: f32, y: f32, width: usize, height: usize) -> (f32
 
 /* Path and Shape Functions */
 
+
+
 #[derive(Clone, Debug)]
 pub struct PathEnds {
-    pub a_x: usize,
-    pub a_y: usize,
-    pub b_x: usize,
-    pub b_y: usize,
+    pub a: HexCoords,
+    pub b: HexCoords,
 }
 
 pub fn distance(ends: &PathEnds) -> u32 {
     let mut dist: u32 = 0;
-    let (mut x, mut y) = (ends.a_x, ends.a_y);
-    while x != ends.b_x {
-        if x % 2 == 0 && y > ends.b_y {
+    let (mut x, mut y) = (ends.a.x, ends.a.y);
+    while x != ends.b.x {
+        if x % 2 == 0 && y > ends.b.y {
             y -= 1;
-        } else if x % 2 != 0 && y < ends.b_y {
+        } else if x % 2 != 0 && y < ends.b.y {
             y += 1;
         }
-        if x > ends.b_x {
+        if x > ends.b.x {
             x -= 1;
         } else {
             x += 1;
         }
         dist += 1;
     }
-    dist + (y as i32 - ends.b_y as i32).abs() as u32
+    dist + (y as i32 - ends.b.y as i32).abs() as u32
 }
 
 pub fn distance_world(ends: &PathEnds) -> u32 {
-    let (a_x, a_y) = map_to_world_hex(ends.a_x as f32, ends.a_y as f32);
-    let (b_x, b_y) = map_to_world_hex(ends.b_x as f32, ends.b_y as f32);
+    let (a_x, a_y) = map_to_world_hex(ends.a.x as f32, ends.a.y as f32);
+    let (b_x, b_y) = map_to_world_hex(ends.b.x as f32, ends.b.y as f32);
     let x = (a_x - b_x);
     let y = (a_y - b_y);
     distance(ends) + ((x*x + y*y).sqrt() * 100.0) as u32
 }
 
 // find the shortest path between two tiles
-pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> Option<Vec<(usize, usize)>> {
+pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> Option<Vec<HexCoords>> {
     // let start = Pos::new(ends.a_x, ends.a_y);
     // let end = Pos::just_point(ends.b_x, ends.b_y);
     // let results = astar_bag_collect(
@@ -116,8 +116,8 @@ pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> 
     // }
     // None
 
-    let start = Pos::new(ends.a_x, ends.a_y);
-    let end = Pos::just_point(ends.b_x, ends.b_y);
+    let start = ends.a.clone();
+    let end = ends.b.clone();
     let result = astar(
         &start,
         |p| p.successors(floor),
@@ -125,7 +125,7 @@ pub fn shortest_path(ends: PathEnds, floor: &Floor/*, entities: &Entities*/) -> 
         |p| *p == end
     );
     if let Some((v, _)) = result {
-        Some(v.into_iter().map(|p| (p.x, p.y)).collect())
+        Some(v)
     } else {
         None
     }

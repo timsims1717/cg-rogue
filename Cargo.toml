@@ -10,6 +10,7 @@ log = { version = "0.4.8" }
 pathfinding = "2.0.4"
 rand = "*"
 ron = "*"
+uuid = { version = "0.8", features = ["v4"] }
 
 [features]
 default = ["vulkan"]

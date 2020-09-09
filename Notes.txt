@@ -6,6 +6,26 @@ Each playable character is the same person from different alternate realities. O
 
 
 ======================================
+Possible Card Paradigms
+======================================
+
+While each of these is separated, there could be a combination of some kind
+
+1. Character Specific Cards
+	Each character would have between 25 and 50 cards
+	There would be a number of neutral cards
+	When selecting new cards, there would be one or two character specific, a neutral, and one full random
+2. Equipment Specific Cards
+	Each weapon and artifact would have between 5 and 15 cards
+	There would be a number of neutral cards (not related to equipment)
+	Equipment could be based on Character still (having some equipment be more or less common by character)
+	What about combo cards, requiring a few different weapons/equipment to work. This would work as a sort of character specific, since each character would start with that combo. Combos would also encourage discovery! Maybe finding rapier + hand crossbow, ya know?
+3. Stat Based Cards
+	Certain cards are only playable if a character's stat is high enough
+	Probably in combination with Equip based?
+
+
+======================================
 Possible Playable Characters
 ======================================
 

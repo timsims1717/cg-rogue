@@ -1,15 +1,17 @@
-use amethyst::core::ecs::{Entity, WriteStorage};
-use crate::components::FloorTile;
+use amethyst::core::ecs::{Entity, WriteStorage, ReadStorage};
+use crate::components::{FloorTile, Character, HexCoords};
 use crate::util::{distance, PathEnds, distance_world};
 use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
 
+/// A simple struct to hold the dimensions of the floor
 #[derive(Debug, Clone)]
 pub struct FloorSize {
     pub width: usize,
     pub height: usize,
 }
 
+/// The struct that holds all the information of the current floor
 #[derive(Debug, Clone)]
 pub struct Floor {
     pub dimensions: FloorSize,
@@ -24,8 +26,8 @@ impl Floor {
         }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Entity {
-        self.tiles[y][x]
+    pub fn get(&self, c: &HexCoords) -> Entity {
+        self.tiles[c.y][c.x]
     }
 
     pub fn append(&mut self, element: Entity) {
@@ -75,40 +77,6 @@ impl Floor {
     }
 }
 
-#[derive(Clone, Eq, Hash, Ord, PartialOrd, PartialEq)]
-pub struct Pos {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl Pos {
-    pub fn new(x: usize, y: usize) -> Pos {
-        Pos{
-            x, y,
-        }
-    }
-
-    pub fn just_point(x: usize, y:usize) -> Pos {
-        Pos{
-            x, y,
-        }
-    }
-
-    pub fn distance_world(&self, other: &Pos) -> u32 {
-        distance_world(&PathEnds{
-            a_x: self.x,
-            a_y: self.y,
-            b_x: other.x,
-            b_y: other.y,
-        })
-    }
-
-    pub fn successors(&self, floor: &Floor) -> Vec<(Pos, u32)> {
-        floor.neighbors_simple(self.x, self.y).into_iter()
-            .map(|(x, y)| (Pos::new(x, y), 1)).collect()
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct PreFloor {
     pub dimensions: FloorSize,
@@ -124,7 +92,7 @@ impl PreFloor {
             },
             tiles: vec![vec![FloorTile {
                 sprite_index: 0,
-                occupied: false,
+                character: None,
                 solid: false,
                 walkable: true,
             }; 20]; 20],

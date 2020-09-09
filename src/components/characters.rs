@@ -1,15 +1,23 @@
 use amethyst::core::ecs::{Component, DenseVecStorage};
-use crate::components::{MovementOptions, AttackOptions, AIActionOptionSeq, Action};
+use crate::components::{MovementOptions, AttackOptions, AIActionOptionSeq, Action, HexCoords, ActionOption};
 use rand::{thread_rng, Rng};
 use crate::util::{PathEnds, distance};
+use uuid::Uuid;
+use crate::components::ActionOption::Interact;
 
 #[derive(Debug, Clone)]
 pub struct Character {
-    pub x: usize,
-    pub y: usize,
-    pub d: Diplomacy,
+    pub id: Uuid,
     pub actions: Vec<Action>,
-    pub acting: bool,
+}
+
+impl Character {
+    pub fn new() -> Character {
+        Character{
+            id: Uuid::new_v4(),
+            actions: vec![],
+        }
+    }
 }
 
 impl Component for Character {
@@ -65,7 +73,11 @@ pub enum Diplomacy {
     Unknown,
 }
 
-pub fn ai_decide(node: &Option<Vec<AITree>>, (curr_x, curr_y): (usize, usize), all_characters: &Vec<(usize, usize, Diplomacy)>) -> (Option<usize>, bool) {
+impl Component for Diplomacy {
+    type Storage = DenseVecStorage<Self>;
+}
+
+pub fn ai_decide(node: &Option<Vec<AITree>>, hex: &HexCoords, all_characters: &Vec<(HexCoords, Diplomacy)>) -> (Option<usize>, bool) {
     if let Some(branch) = node {
         for t in branch.iter() {
             let passed = match &t.require {
@@ -73,12 +85,10 @@ pub fn ai_decide(node: &Option<Vec<AITree>>, (curr_x, curr_y): (usize, usize), a
                 AIRequire::Target(target) => {
                     match target {
                         AITargetDecision::AnyAlly(min, max) => {
-                            all_characters.iter().any(|(x, y, d)| {
+                            all_characters.iter().any(|(h, d)| {
                                     let dist = distance(&PathEnds {
-                                        a_x: curr_x,
-                                        a_y: curr_y,
-                                        b_x: *x,
-                                        b_y: *y,
+                                        a: hex.clone(),
+                                        b: h.clone(),
                                     }) as usize;
                                     dist >= *min && dist < *max && (*d == Diplomacy::Ally || *d == Diplomacy::Player)
                                 }
@@ -93,7 +103,7 @@ pub fn ai_decide(node: &Option<Vec<AITree>>, (curr_x, curr_y): (usize, usize), a
                 if let Some(d) = &t.decision {
                     return (Some(*d), false);
                 } else {
-                    let (d, c) = ai_decide(&t.tree, (curr_x, curr_y), all_characters);
+                    let (d, c) = ai_decide(&t.tree, hex, all_characters);
                     if !c {
                         return (d, c);
                     }
@@ -108,8 +118,37 @@ pub fn ai_decide(node: &Option<Vec<AITree>>, (curr_x, curr_y): (usize, usize), a
 }
 
 #[derive(Debug, Clone)]
-pub struct PC {}
+pub struct Player {
+    pub mode: ActionOption,
+    pub input: PlayerInput,
+}
 
-impl Component for PC {
+impl Player {
+    pub fn new() -> Player {
+        Player {
+            mode: Interact,
+            input: PlayerInput::default(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct PlayerInput {
+    pub l_click: bool,
+    pub r_click: bool,
+    pub tile: Option<HexCoords>,
+    // pub button: Option<Button>,
+    // pub card: Option<Card>,
+    // pub ui_el: Option<UIElement>,
+}
+
+impl Component for Player {
+    type Storage = DenseVecStorage<Self>;
+}
+
+#[derive(Debug, Clone)]
+pub struct Acting {}
+
+impl Component for Acting {
     type Storage = DenseVecStorage<Self>;
 }

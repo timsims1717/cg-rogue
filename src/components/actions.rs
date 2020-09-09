@@ -1,25 +1,24 @@
 use amethyst::core::ecs::{Component, DenseVecStorage};
-use crate::components::AITargetChoice;
+use crate::components::{AITargetChoice, HexCoords};
+use crate::util::PathEnds;
 
 #[derive(Debug, Clone)]
 pub struct MovementAction {
-    path: Vec<(usize, usize)>,
+    path: Vec<HexCoords>,
     path_i: usize,
     options: MovementOptions,
     start: bool,
     first: bool,
-    pub paused: bool,
 }
 
 impl MovementAction {
-    pub fn new(path: Vec<(usize, usize)>, options: MovementOptions) -> MovementAction {
+    pub fn new(path: Vec<HexCoords>, options: MovementOptions) -> MovementAction {
         MovementAction {
             path,
             path_i: 0,
             options,
             start: false,
             first: true,
-            paused: false,
         }
     }
 
@@ -27,10 +26,12 @@ impl MovementAction {
         self.path_i >= self.path.len() - 1
     }
 
-    pub fn get_move(&mut self) -> (usize, usize, usize, usize) {
-        let (a_x, a_y) = self.path[self.path_i];
-        let (b_x, b_y) = self.path[self.path_i+1];
-        (a_x, a_y, b_x, b_y)
+    pub fn get_move(&mut self) -> PathEnds {
+        let a = self.path[self.path_i].clone();
+        let b = self.path[self.path_i+1].clone();
+        PathEnds{
+            a, b
+        }
     }
 
     pub fn next_move(&mut self) {
@@ -76,13 +77,13 @@ impl MovementOptions {
 
 #[derive(Debug, Clone)]
 pub struct AttackAction {
-    area: Vec<(usize, usize)>,
+    area: Vec<HexCoords>,
     options: AttackOptions,
     go: bool,
 }
 
 impl AttackAction {
-    pub fn new(area: Vec<(usize, usize)>, options: AttackOptions) -> AttackAction {
+    pub fn new(area: Vec<HexCoords>, options: AttackOptions) -> AttackAction {
         AttackAction {
             area,
             options,
@@ -90,7 +91,7 @@ impl AttackAction {
         }
     }
 
-    pub fn get_area(&self) -> &Vec<(usize, usize)> {
+    pub fn get_area(&self) -> &Vec<HexCoords> {
         &self.area
     }
 
@@ -110,7 +111,7 @@ impl Component for AttackAction {
 #[derive(Debug, Clone)]
 pub struct AttackOptions {
     pub range: usize,
-    pub area: Vec<(usize, usize)>,
+    pub area: Vec<HexCoords>,
     pub damage: DamageOptions,
     pub line: bool,
     pub path: bool,
