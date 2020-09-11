@@ -20,6 +20,7 @@ pub const SCALED_TILE_SIZE: f32 = TILE_SIZE * SCALAR;
 /* Z Constants */
 
 pub const CAMERA_Z: f32 = 1.0;
+pub const UI_Z: f32 = 0.8;
 pub const CHAR_Z: f32 = 0.5;
 pub const TILE_UI_Z: f32 = 0.3;
 pub const TILE_OBJ_Z: f32 = 0.2;

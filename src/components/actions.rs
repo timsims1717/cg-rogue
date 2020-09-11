@@ -1,14 +1,13 @@
 use amethyst::core::ecs::{Component, DenseVecStorage};
-use crate::components::{AITargetChoice, HexCoords};
+use crate::components::{AITargetChoice, HexCoords, ID};
 use crate::util::PathEnds;
+use crate::resources::Floor;
 
 #[derive(Debug, Clone)]
 pub struct MovementAction {
     path: Vec<HexCoords>,
     path_i: usize,
-    options: MovementOptions,
-    start: bool,
-    first: bool,
+    pub options: MovementOptions,
 }
 
 impl MovementAction {
@@ -17,8 +16,6 @@ impl MovementAction {
             path,
             path_i: 0,
             options,
-            start: false,
-            first: true,
         }
     }
 
@@ -36,22 +33,6 @@ impl MovementAction {
 
     pub fn next_move(&mut self) {
         self.path_i += 1;
-    }
-
-    pub fn execute(&mut self) {
-        self.start = true;
-    }
-
-    pub fn is_go(&self) -> bool {
-        self.start
-    }
-
-    pub fn first_run(&mut self) -> bool {
-        if self.first {
-            self.first = false;
-            return true;
-        }
-        false
     }
 }
 
@@ -78,8 +59,7 @@ impl MovementOptions {
 #[derive(Debug, Clone)]
 pub struct AttackAction {
     area: Vec<HexCoords>,
-    options: AttackOptions,
-    go: bool,
+    pub options: AttackOptions,
 }
 
 impl AttackAction {
@@ -87,20 +67,11 @@ impl AttackAction {
         AttackAction {
             area,
             options,
-            go: false,
         }
     }
 
     pub fn get_area(&self) -> &Vec<HexCoords> {
         &self.area
-    }
-
-    pub fn execute(&mut self) {
-        self.go = true;
-    }
-
-    pub fn is_go(&self) -> bool {
-        self.go
     }
 }
 
@@ -116,30 +87,61 @@ pub struct AttackOptions {
     pub line: bool,
     pub path: bool,
     pub width: usize,
-    pub self_damage: bool,
 }
 
 impl AttackOptions {
-    pub fn basic(range: usize, dmg: usize) -> AttackOptions {
+    pub fn basic(range: usize, amount: usize, d_type: DamageType) -> AttackOptions {
         AttackOptions{
             range,
             area: vec![],
             damage: DamageOptions{
-                normal: dmg,
-                area: 1.0,
+                amount,
+                d_type,
+                retaliate: false,
             },
             line: false,
             path: false,
             width: 0,
-            self_damage: false,
         }
     }
 }
 
 #[derive(Debug, Clone)]
+pub struct DamageTileAction {
+    pub options: DamageOptions,
+    pub source: ID,
+}
+
+impl Component for DamageTileAction {
+    type Storage = DenseVecStorage<Self>;
+}
+
+#[derive(Debug, Clone)]
+pub struct DamageActions {
+    pub d: Vec<DamageOptions>,
+}
+
+impl Component for DamageActions {
+    type Storage = DenseVecStorage<Self>;
+}
+
+#[derive(Debug, Clone)]
 pub struct DamageOptions {
-    pub normal: usize,
-    pub area: f32,
+    pub amount: usize,
+    pub d_type: DamageType,
+    pub retaliate: bool,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum DamageType {
+    Pierce,
+    Slash,
+    Blunt,
+    Heat,
+    Toxic,
+    Electric,
+    Cold,
+    Mental,
 }
 
 #[derive(Debug, Clone)]
@@ -169,4 +171,5 @@ pub enum Action {
     NoAction,
     Move(MovementAction),
     Attack(AttackAction),
+    Damage(DamageTileAction),
 }

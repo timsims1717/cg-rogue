@@ -7,7 +7,7 @@ use amethyst::{
 };
 use crate::resources::{CameraHandle, Floor, UISprites, Game, Phase};
 use crate::util::{tile_exists, mouse_to_map_hex, shortest_path, PathEnds};
-use crate::components::{FloorTile, TileUIElement, Character, MovementAction, MovementOptions, ActionOption, AttackOptions, Player, HexCoords};
+use crate::components::{FloorTile, TileUIElement, Character, MovementAction, MovementOptions, ActionOption, AttackOptions, Player, HexCoords, DamageType};
 use crate::entities::{create_tile_ui, TileUI};
 use amethyst::renderer::rendy::wsi::winit::MouseButton::{Left, Right};
 use crate::components::ActionOption::{Move, Interact, Attack};
@@ -58,7 +58,7 @@ impl<'s> System<'s> for MouseInputSystem {
             }
 
             if input_handler.action_is_down("AttackButton").unwrap() {
-                player.mode = Attack(AttackOptions::basic(1, 1));
+                player.mode = Attack(AttackOptions::basic(1, 1, DamageType::Blunt));
             }
 
             if let Some((xf, yf)) = input_handler.mouse_position() {

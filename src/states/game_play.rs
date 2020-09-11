@@ -13,11 +13,12 @@ use crate::{
     resources::{Floor, FloorSize},
     util::{SCALAR, TILE_SIZE}
 };
-use crate::resources::{CameraHandle, UISprites, PreFloor, Game, DebugText};
-use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex};
-use crate::components::{Character, AI, MovementOptions, ActionOption, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy, HexCoords, Player};
+use crate::resources::{CameraHandle, UISprites, PreFloor, Game, DebugText, TypeFaces};
+use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex, UI_Z};
+use crate::components::{Character, AI, MovementOptions, ActionOption, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy, HexCoords, Player, Health, DamageType, ID};
 use crate::components::ActionOption::Interact;
 use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText};
+use std::collections::HashMap;
 
 pub struct GamePlayState;
 
@@ -226,9 +227,11 @@ fn init_player(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
     world.create_entity()
         .with(char_sprites[0].clone())
         .with(Character::new())
+        .with(ID::new())
         .with(HexCoords{ x: 4, y: 7 })
         .with(transform)
         .with(Diplomacy::Player)
+        .with(Health::new(10))
         .with(Player::new())
         .build()
 }
@@ -242,8 +245,10 @@ fn init_enemy(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
     world.create_entity()
         .with(char_sprites[0].clone())
         .with(Character::new())
+        .with(ID::new())
         .with(HexCoords{ x: 9, y: 6 })
         .with(Diplomacy::Enemy)
+        .with(Health::new(10))
         .with(AI{
             action_choices: vec![
                 AIActionOptionSeq {
@@ -258,11 +263,19 @@ fn init_enemy(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
                     sequence: vec![
                         AIActionOption {
                             option: ActionOption::Move(MovementOptions::basic(1)),
-                            target: AITargetChoice::ClosestAlly(0, 3),
+                            target: AITargetChoice::ClosestAlly(2, 3),
                         },
                         AIActionOption {
-                            option: ActionOption::Attack(AttackOptions::basic(1, 6)),
-                            target: AITargetChoice::ClosestAlly(0, 0),
+                            option: ActionOption::Attack(AttackOptions::basic(1, 6, DamageType::Blunt)),
+                            target: AITargetChoice::ClosestAlly(1, 2),
+                        }
+                    ]
+                },
+                AIActionOptionSeq {
+                    sequence: vec![
+                        AIActionOption {
+                            option: ActionOption::Attack(AttackOptions::basic(1, 6, DamageType::Blunt)),
+                            target: AITargetChoice::ClosestAlly(1, 2),
                         }
                     ]
                 }
@@ -272,8 +285,12 @@ fn init_enemy(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
                 decision: Some(0),
                 tree: None,
             }, AITree {
-                require: AIRequire::Target(AITargetDecision::AnyAlly(0, 3)),
+                require: AIRequire::Target(AITargetDecision::AnyAlly(2, 3)),
                 decision: Some(1),
+                tree: None,
+            }, AITree {
+                require: AIRequire::Target(AITargetDecision::AnyAlly(1, 2)),
+                decision: Some(2),
                 tree: None,
             }])
         })
@@ -292,7 +309,7 @@ fn init_debug(world: &mut World) {
         "DEBUG_phase".to_string(),
         Anchor::TopLeft,
         Anchor::TopLeft,
-        20.0, -20.0, 1.0, 200.0, 20.0,
+        20.0, -20.0, UI_Z, 200.0, 20.0,
     );
 
     let phase = world
@@ -310,7 +327,7 @@ fn init_debug(world: &mut World) {
         "DEBUG_hover".to_string(),
         Anchor::TopLeft,
         Anchor::TopLeft,
-        20.0, -40.0, 1.0, 200.0, 20.0,
+        20.0, -40.0, UI_Z, 200.0, 20.0,
     );
 
     let hover = world
@@ -324,5 +341,24 @@ fn init_debug(world: &mut World) {
         ))
         .build();
 
-    world.insert(DebugText{phase, hover });
+    let hover_hp_transform = UiTransform::new(
+        "DEBUG_hover".to_string(),
+        Anchor::TopLeft,
+        Anchor::TopLeft,
+        20.0, -60.0, UI_Z, 200.0, 20.0,
+    );
+
+    let hover_hp = world
+        .create_entity()
+        .with(hover_hp_transform)
+        .with(UiText::new(
+            font.clone(),
+            "init".to_string(),
+            [1., 1., 1., 1.],
+            20.,
+        ))
+        .build();
+
+    world.insert(DebugText{ phase, hover, hover_hp });
+    world.insert(TypeFaces{ debug: font })
 }

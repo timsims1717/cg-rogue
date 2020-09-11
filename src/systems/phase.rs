@@ -33,12 +33,10 @@ impl<'s> System<'s> for PhaseSystem {
                     if acting.get(entity).is_none() {
                         match character.actions.remove(0) {
                             Action::Move(mut m) => {
-                                m.execute();
                                 lazy_update.insert(entity, m);
                                 acting.insert(entity, Acting {});
                             },
                             Action::Attack(mut a) => {
-                                a.execute();
                                 lazy_update.insert(entity, a);
                                 acting.insert(entity, Acting {});
                             },

@@ -12,7 +12,7 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-use crate::systems::{MouseInputSystem, MovementActionSystem, CameraMovementSystem, WindowResizeSystem, AIDecideSystem, TileSelectSystem, PhaseSystem, DebugSystem, AttackActionSystem};
+use crate::systems::{MouseInputSystem, MovementActionSystem, CameraMovementSystem, WindowResizeSystem, AIDecideSystem, TileSelectSystem, PhaseSystem, DebugSystem, AttackActionSystem, DamageTileSystem, DamageSystem};
 use amethyst::input::{InputBundle, StringBindings};
 
 mod components;
@@ -55,7 +55,9 @@ fn main() -> amethyst::Result<()> {
         .with(PhaseSystem, "phase", &[])
         .with(AIDecideSystem, "ai_decide", &[])
         .with(DebugSystem, "debug", &[])
-        .with(AttackActionSystem, "attack_action", &[]);
+        .with(AttackActionSystem, "attack_action", &[])
+        .with(DamageTileSystem, "damage_tile", &[])
+        .with(DamageSystem, "damage", &[]);
 
     let mut game = Application::new(assets_dir, states::GamePlayState, game_data)?;
     game.run();

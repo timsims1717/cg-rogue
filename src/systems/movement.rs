@@ -1,6 +1,6 @@
 use amethyst::core::ecs::{Join, System, WriteStorage, Read, ReadExpect, LazyUpdate, Entities, ReadStorage, Entity};
 use amethyst::core::{Transform, Time};
-use crate::components::{MovementAction, Character, FloorTile, HexCoords, Acting};
+use crate::components::{MovementAction, Character, FloorTile, HexCoords, Acting, ID};
 use amethyst::core::math::Vector3;
 use crate::util::{map_to_world_hex, PathEnds};
 use crate::resources::Floor;
@@ -12,7 +12,7 @@ impl<'s> System<'s> for MovementActionSystem {
         Entities<'s>,
         WriteStorage<'s, Transform>,
         WriteStorage<'s, MovementAction>,
-        ReadStorage<'s, Character>,
+        ReadStorage<'s, ID>,
         WriteStorage<'s, HexCoords>,
         ReadStorage<'s, Acting>,
         Read<'s, Time>,
@@ -25,7 +25,7 @@ impl<'s> System<'s> for MovementActionSystem {
         entities,
         mut transforms,
         mut movements,
-        characters,
+        ids,
         mut hexes,
         acting,
         time,
@@ -37,11 +37,11 @@ impl<'s> System<'s> for MovementActionSystem {
         let movement_speed = 3.5;
         let delta_time = time.delta_real_seconds();
         let move_factor = movement_speed * delta_time;
-        for (entity, transform, movement, character, hex) in (&entities, &mut transforms, &mut movements, &characters, &mut hexes).join() {
-            if movement.is_go() && !movement.path_complete() {
+        for (entity, transform, movement, hex) in (&entities, &mut transforms, &mut movements, &mut hexes).join() {
+            if !movement.path_complete() {
                 let path = movement.get_move();
                 // Attempt to move the character's location
-                let result = move_entity(&floor, &path, &entity, &mut tiles, &characters, &acting);
+                let result = move_entity(&floor, &path, &entity, &mut tiles, &ids, &acting);
                 if result.must_stop {
                     lazy_update.remove::<MovementAction>(entity);
                     lazy_update.remove::<Acting>(entity);
@@ -76,14 +76,9 @@ impl<'s> System<'s> for MovementActionSystem {
                     movement.next_move();
                     hex.x = path.b.x;
                     hex.y = path.b.y;
-                    // todo: remove ui bits and do any other on move stuff
-                    if movement.path_complete() {
-                        lazy_update.remove::<MovementAction>(entity);
-                        lazy_update.remove::<Acting>(entity);
-                    }
                 }
-            }
-            if movement.path_complete() {
+            } else {
+                // todo: remove ui bits and do any other on move stuff
                 lazy_update.remove::<MovementAction>(entity);
                 lazy_update.remove::<Acting>(entity);
             }
@@ -92,40 +87,44 @@ impl<'s> System<'s> for MovementActionSystem {
 }
 
 /// Changes the location of the entity at path.a to path.b
-pub fn move_entity(floor: &Floor, path: &PathEnds, entity: &Entity, tiles: &mut WriteStorage<FloorTile>, characters: &ReadStorage<Character>, acting: &ReadStorage<Acting>) -> MoveResult {
-    let character = characters.get(*entity).unwrap();
+pub fn move_entity(floor: &Floor, path: &PathEnds, entity: &Entity, tiles: &mut WriteStorage<FloorTile>, ids: &ReadStorage<ID>, acting: &ReadStorage<Acting>) -> MoveResult {
+    let id = ids.get(*entity).unwrap();
     // The tiles must exist
     // The first tile must have a character entity
-    if let Some(mut tile_a) = tiles.get(floor.get(&path.a)) {
-        if let Some(mut tile_b) = tiles.get(floor.get(&path.b)) {
-            if let Some(entity_b) = tile_b.character {
-                // there is already a character at b
-                if let Some(character_b) = characters.get(entity_b) {
-                    return if character_b.id == character.id {
-                        // the character has already started moving to b
-                        MoveResult {
-                            move_now: true,
-                            must_stop: false,
+    if let Some(tile_a) = floor.get(&path.a) {
+        if let Some(tile_b) = floor.get(&path.b) {
+            if let Some(mut f_tile_a) = tiles.get(tile_a) {
+                if let Some(mut f_tile_b) = tiles.get(tile_b) {
+                    if let Some(entity_b) = f_tile_b.character {
+                        // there is already a character at b
+                        if let Some(id_b) = ids.get(entity_b) {
+                            return if id_b.get() == id.get() {
+                                // the character has already started moving to b
+                                MoveResult {
+                                    move_now: true,
+                                    must_stop: false,
+                                }
+                            } else {
+                                // don't move, and stop if character_b is not moving
+                                MoveResult {
+                                    move_now: false,
+                                    must_stop: acting.get(entity_b).is_none(),
+                                }
+                            }
                         }
                     } else {
-                        // don't move, and stop if character_b is not moving
-                        MoveResult {
-                            move_now: false,
-                            must_stop: acting.get(entity_b).is_none(),
-                        }
-                    }
-                }
-            } else {
-                if let Some(entity_a) = tile_a.character {
-                    if let Some(character_a) = characters.get(entity_a) {
-                        if character_a.id == character.id {
-                            // there is no character entity at b. Move the character from a to b.
-                            tiles.get_mut(floor.get(&path.a)).unwrap().character = None;
-                            tiles.get_mut(floor.get(&path.b)).unwrap().character = Some(entity_a);
-                            return MoveResult {
-                                move_now: true,
-                                must_stop: false,
-                            };
+                        if let Some(entity_a) = f_tile_a.character {
+                            if let Some(id_a) = ids.get(entity_a) {
+                                if id_a.get() == id.get() {
+                                    // there is no character entity at b. Move the character from a to b.
+                                    tiles.get_mut(tile_a).unwrap().character = None;
+                                    tiles.get_mut(tile_b).unwrap().character = Some(entity_a);
+                                    return MoveResult {
+                                        move_now: true,
+                                        must_stop: false,
+                                    };
+                                }
+                            }
                         }
                     }
                 }

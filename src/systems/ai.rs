@@ -11,27 +11,21 @@ pub struct AIDecideSystem;
 
 impl<'s> System<'s> for AIDecideSystem {
     type SystemData = (
-        Entities<'s>,
         ReadStorage<'s, AI>,
         WriteStorage<'s, Character>,
         ReadStorage<'s, HexCoords>,
         ReadStorage<'s, Diplomacy>,
         WriteExpect<'s, Game>,
         ReadExpect<'s, Floor>,
-        ReadStorage<'s, FloorTile>,
-        WriteStorage<'s, MovementAction>,
     );
 
     fn run(&mut self, (
-        entities,
         all_ai,
         mut characters,
         hexes,
         diplomacies,
         mut game,
         floor,
-        tiles,
-        mut movements,
     ): Self::SystemData) {
         if game.phase == AIDecisionPhase {
             let mut all_characters: Vec<(HexCoords, Diplomacy)> = Vec::new();

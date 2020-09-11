@@ -26,8 +26,12 @@ impl Floor {
         }
     }
 
-    pub fn get(&self, c: &HexCoords) -> Entity {
-        self.tiles[c.y][c.x]
+    pub fn get(&self, c: &HexCoords) -> Option<Entity> {
+        return if self.dimensions.width <= c.x || self.dimensions.height <= c.y {
+            None
+        } else {
+            Some(self.tiles[c.y][c.x])
+        }
     }
 
     pub fn append(&mut self, element: Entity) {
