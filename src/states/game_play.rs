@@ -15,9 +15,9 @@ use crate::{
 };
 use crate::resources::{CameraHandle, UISprites, PreFloor, Game, DebugText, TypeFaces};
 use crate::util::{CHAR_Z, TILE_Z, map_to_world_hex, UI_Z};
-use crate::components::{Character, AI, MovementOptions, ActionOption, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy, HexCoords, Player, Health, DamageType, ID};
+use crate::components::{Character, AI, MovementOptions, ActionOption, AIActionOption, AIActionOptionSeq, AITree, AITargetDecision, AttackOptions, AIRequire, AITargetChoice, Diplomacy, HexCoords, Player, Health, DamageType, ID, Name};
 use crate::components::ActionOption::Interact;
-use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText};
+use amethyst::ui::{TtfFormat, UiTransform, Anchor, UiText, UiImage};
 use std::collections::HashMap;
 
 pub struct GamePlayState;
@@ -37,8 +37,8 @@ impl SimpleState for GamePlayState {
 
         // Tilemap
         let tile_sprites = load_test_tiles(world);
-
         let char_sprites = load_char_sprites(world);
+        let card_sprites = load_card_textures(world);
 
         // UI Textures
         let ui_sprites = load_ui_textures(world);
@@ -48,6 +48,7 @@ impl SimpleState for GamePlayState {
         world.insert(floor);
         world.insert(Game::new());
         init_debug(world);
+        init_cards(world, &card_sprites);
     }
 
     fn handle_event(
@@ -90,7 +91,7 @@ fn init_camera(world: &mut World, dimensions: &ScreenDimensions, floor_size: &Fl
         .build()
 }
 
-/* loading test tiles */
+/* loading test textures */
 
 fn load_test_tiles(world: &mut World) -> Vec<SpriteRender> {
     // tile textures
@@ -181,6 +182,38 @@ pub fn load_ui_textures(world: &mut World) -> Vec<SpriteRender> {
     };
 
     (0..5)
+        .map(|i| SpriteRender {
+            sprite_sheet: sheet_handle.clone(),
+            sprite_number: i,
+        })
+        .collect()
+}
+
+pub fn load_card_textures(world: &mut World) -> Vec<SpriteRender> {
+    // ui textures
+    let texture_handle = {
+        let loader = world.read_resource::<Loader>();
+        let texture_storage = world.read_resource::<AssetStorage<Texture>>();
+        loader.load(
+            "cards/testcard.png",
+            ImageFormat::default(),
+            (),
+            &texture_storage,
+        )
+    };
+
+    let sheet_handle = {
+        let loader = world.read_resource::<Loader>();
+        let sheet_storage = world.read_resource::<AssetStorage<SpriteSheet>>();
+        loader.load(
+            "cards/testcard.ron",
+            SpriteSheetFormat(texture_handle),
+            (),
+            &sheet_storage,
+        )
+    };
+
+    (0..1)
         .map(|i| SpriteRender {
             sprite_sheet: sheet_handle.clone(),
             sprite_number: i,
@@ -298,6 +331,33 @@ fn init_enemy(world: &mut World, char_sprites: &[SpriteRender]) -> Entity {
         .build()
 }
 
+fn init_cards(world: &mut World, card_sprites: &[SpriteRender]) {
+    let font = world.read_resource::<Loader>().load(
+        "font/square.ttf",
+        TtfFormat,
+        (),
+        &world.read_resource(),
+    );
+    let text = UiText::new(
+        font.clone(),
+        "this is a test".to_string(),
+        [0.02, 0.02, 0.02, 1.],
+        20.,
+    );
+    let card_transform = UiTransform::new(
+        "CARD_test".to_string(),
+        Anchor::BottomLeft,
+        Anchor::BottomLeft,
+        100.0, 100.0, UI_Z, 250.0, 350.0,
+    );
+    world.create_entity()
+        .with(UiImage::Sprite(card_sprites[0].clone()))
+        .with(Name::new("card_test".to_string()))
+        .with(text)
+        .with(card_transform)
+        .build();
+}
+
 fn init_debug(world: &mut World) {
     let font = world.read_resource::<Loader>().load(
         "font/square.ttf",
@@ -359,6 +419,24 @@ fn init_debug(world: &mut World) {
         ))
         .build();
 
-    world.insert(DebugText{ phase, hover, hover_hp });
+    let ui_hover_transform = UiTransform::new(
+        "DEBUG_ui_hover".to_string(),
+        Anchor::TopLeft,
+        Anchor::TopLeft,
+        20.0, -80.0, UI_Z, 200.0, 20.0,
+    );
+
+    let ui_hover = world
+        .create_entity()
+        .with(ui_hover_transform)
+        .with(UiText::new(
+            font.clone(),
+            "init".to_string(),
+            [1., 1., 1., 1.],
+            20.,
+        ))
+        .build();
+
+    world.insert(DebugText{ phase, ui_hover, hover, hover_hp });
     world.insert(TypeFaces{ debug: font })
 }

@@ -36,6 +36,7 @@ impl<'s> System<'s> for AIDecideSystem {
                 if !ai.action_choices.is_empty() {
                     if let(Some(decision), _) = ai_decide(&ai.tree, &hex, &all_characters) {
                         let choice = &ai.action_choices[decision];
+                        let mut curr_hex = hex.clone();
                         for ai_option in choice.sequence.iter() {
                             if let Some(target_hex) = match ai_option.target {
                                 AITargetChoice::ClosestAlly(min, max) => {
@@ -43,7 +44,7 @@ impl<'s> System<'s> for AIDecideSystem {
                                     for (h, d) in all_characters.iter() {
                                         if *d == Diplomacy::Ally || *d == Diplomacy::Player {
                                             let dist = distance(&PathEnds {
-                                                a: hex.clone(),
+                                                a: curr_hex.clone(),
                                                 b: h.clone(),
                                             }) as usize;
                                             if dist >= min && dist < max && best == 0 || best > dist {
@@ -67,10 +68,13 @@ impl<'s> System<'s> for AIDecideSystem {
                                 character.actions.push(match &ai_option.option {
                                     ActionOption::Move(m) => {
                                         if let Some(mut path) = shortest_path(PathEnds{
-                                                a: hex.clone(),
+                                                a: curr_hex.clone(),
                                                 b: target_hex,
                                             }, &floor) {
                                             path.truncate(m.range + 1);
+                                            if path.len() > 0 {
+                                                curr_hex = path[path.len() - 1].clone();
+                                            }
                                             Action::Move(MovementAction::new(path, m.clone()))
                                         } else {
                                             Action::NoAction

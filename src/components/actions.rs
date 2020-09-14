@@ -82,26 +82,20 @@ impl Component for AttackAction {
 #[derive(Debug, Clone)]
 pub struct AttackOptions {
     pub range: usize,
-    pub area: Vec<HexCoords>,
+    pub area: Option<AreaOptions>,
     pub damage: DamageOptions,
-    pub line: bool,
-    pub path: bool,
-    pub width: usize,
 }
 
 impl AttackOptions {
     pub fn basic(range: usize, amount: usize, d_type: DamageType) -> AttackOptions {
         AttackOptions{
             range,
-            area: vec![],
+            area: None,
             damage: DamageOptions{
                 amount,
                 d_type,
                 retaliate: false,
             },
-            line: false,
-            path: false,
-            width: 0,
         }
     }
 }
@@ -172,4 +166,12 @@ pub enum Action {
     Move(MovementAction),
     Attack(AttackAction),
     Damage(DamageTileAction),
+}
+
+#[derive(Debug, Clone)]
+pub struct AreaOptions {
+    pub area: Vec<HexCoords>,
+    pub line: bool,
+    pub path: bool,
+    pub width: usize,
 }

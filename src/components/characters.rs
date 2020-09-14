@@ -1,27 +1,5 @@
-use amethyst::core::ecs::{Component, DenseVecStorage};
-use uuid::Uuid;
+use amethyst::core::ecs::{Component, DenseVecStorage, VecStorage, NullStorage};
 use crate::components::{Action, DamageType};
-
-#[derive(Debug, Clone)]
-pub struct ID {
-    id: Uuid,
-}
-
-impl ID {
-    pub fn new() -> ID {
-        ID{
-            id: Uuid::new_v4(),
-        }
-    }
-
-    pub fn get(&self) -> Uuid {
-        self.id
-    }
-}
-
-impl Component for ID {
-    type Storage = DenseVecStorage<Self>;
-}
 
 #[derive(Debug, Clone)]
 pub struct Character {
@@ -50,14 +28,14 @@ pub enum Diplomacy {
 }
 
 impl Component for Diplomacy {
-    type Storage = DenseVecStorage<Self>;
+    type Storage = VecStorage<Self>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Acting {}
 
 impl Component for Acting {
-    type Storage = DenseVecStorage<Self>;
+    type Storage = NullStorage<Self>;
 }
 
 #[derive(Debug, Clone)]

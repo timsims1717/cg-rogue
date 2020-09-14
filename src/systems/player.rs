@@ -65,10 +65,12 @@ impl<'s> System<'s> for TileSelectSystem {
                         Attack(a) => {
                             if in_range(&path_ends, a.range, &floor) {
                                 let mut tile_group = vec![HexCoords { x: input_hex.x, y: input_hex.y }];
-                                tile_group.append(&mut a.area.clone());
-                                if a.path {
-                                    if let Some(mut path) = shortest_path(path_ends, &floor, ) {
-                                        tile_group.append(&mut path);
+                                if let Some(area) = &a.area {
+                                    tile_group.append(&mut area.area.clone());
+                                    if area.path {
+                                        if let Some(mut path) = shortest_path(path_ends, &floor, ) {
+                                            tile_group.append(&mut path);
+                                        }
                                     }
                                 }
                                 for h in tile_group.iter() {

@@ -2,7 +2,7 @@ use amethyst::core::ecs::{Join, System, WriteStorage, ReadStorage, Entities, Laz
 use amethyst::shred::ReadExpect;
 use crate::resources::{DebugText, Game, Floor, TypeFaces};
 use amethyst::ui::{UiText, UiTransform, Anchor};
-use crate::components::{Player, FloorTile, AI, Character, Health};
+use crate::components::{Player, FloorTile, AI, Character, Health, Hovered, Name};
 use amethyst::core::{math::base::Vector3, Transform, Parent};
 use crate::util::{SCALAR, UI_Z};
 
@@ -18,6 +18,9 @@ impl<'s> System<'s> for DebugSystem {
         ReadStorage<'s, FloorTile>,
         ReadStorage<'s, AI>,
         ReadStorage<'s, Health>,
+        ReadStorage<'s, Hovered>,
+        ReadStorage<'s, Name>,
+        ReadStorage<'s, UiTransform>,
     );
 
     fn run(&mut self, (
@@ -29,9 +32,19 @@ impl<'s> System<'s> for DebugSystem {
         tiles,
         ai,
         health,
+        hovereds,
+        names,
+        ui_transforms,
     ): Self::SystemData) {
         if let Some(text) = ui_text.get_mut(debug.phase) {
             text.text = format!("Phase: {}", game.phase.to_string());
+        }
+        let mut ui_hover = "None".to_string();
+        for (name, _, _) in (&names, &hovereds, &ui_transforms).join() {
+            ui_hover = name.get();
+        }
+        if let Some(text) = ui_text.get_mut(debug.ui_hover) {
+            text.text = format!("UI Hover: {}", ui_hover);
         }
         for (player) in (&players).join() {
             let mut hover_entity = "Empty";
