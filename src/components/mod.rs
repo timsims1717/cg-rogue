@@ -1,6 +1,7 @@
 
 mod actions;
 mod ai;
+mod animation;
 mod cards;
 mod characters;
 mod floor;
@@ -9,6 +10,7 @@ mod ui;
 
 pub use self::actions::*;
 pub use self::ai::*;
+pub use self::animation::*;
 pub use self::cards::*;
 pub use self::characters::*;
 pub use self::floor::*;

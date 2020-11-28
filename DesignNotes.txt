@@ -73,3 +73,37 @@ Each playable character also has a bonus way to gain experience:
 The power level of each card you earn/buy is partially determined by your current level (kinda like Minecraft Dungeons)
 
 You can also maybe spend experience to level up your allies?
+
+======================================
+Possible Conditions
+======================================
+Prone (cancel move, stand up next turn)
+Stun (cancel action)
+Restrain (cancel move)
+Grapple (cancel move, move w/character)
+Insubstantial (can't take or deal damage)
+
+======================================
+The Hoplite
+======================================
+Spear and Shield
+Spear and Sand Medallion
+Javelins and Shield
+
+Spear/Javelins:
+Thrust (hoplite, weapon) (damage X, range 2) (line) (first)
+Sweep (hoplite, weapon) (damage X, push 1, range 1) (3, 5, 6 area around)
+Charge (hoplite, weapon) (move X, line, through, damage Y each space)
+Javelin Throw (hoplite, thrown) (damage X, range Y, throw)
+Phalanx (hoplite, weapon) (move X) (damage Y, range 1) (defense Z, range 1)
+Set Spear (hoplite, weapon) (defense X) (Y damage when enemy moves w/in 1)
+
+Shield:
+Tower Shield (hoplite, shield) (defense X)
+Shield Bash (hoplite, shield) (stun, range 1) (defense X)
+Shield Wall (hoplite, shield) (defense X) (defense Y w/in range 1)
+
+Sand Medallion:
+Dust Devil (hoplite, magic) (damage X, push Y, range Z, area 1, path(damage W, push R))
+Sand Form (hoplite, magic) (transform, flight, insubstantial)
+Summon Scorpion (hoplite, magic) (summon, scorpions, range 1)
